@@ -93,7 +93,7 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
     if (optind < argc) {
         cmd_args->bin_file = argv[optind];
     } else {
-        fprintf(stderr, "Error: Missing required binary file (-b / --bin)\n");
+        fprintf(stderr, "Error: Missing required binary file\n");
         print_usage(argv[0], stderr);
         exit(EXIT_FAILURE);
     }
