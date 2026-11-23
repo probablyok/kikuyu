@@ -93,21 +93,6 @@ int safe_read_file_bin(const char* filepath, Cpu* cpu, long mem_offset) {
     return 0;
 }
 
-int safe_json_parse(const char* buffer, cJSON** json) {
-    *json = cJSON_Parse(buffer);
-
-    if (*json == NULL) {
-        const char* json_err = cJSON_GetErrorPtr();
-        if (json_err != NULL) {
-            fprintf(stderr, "Error: JSON parse failed before: %s\n", json_err);
-        }
-        cJSON_Delete(*json);
-        return 1;
-    }
-
-    return 0;
-}
-
 char* safe_read_line(FILE* stream, size_t* len_ptr, size_t* cap_ptr) {
     // Handle invalid stream case
     if (!stream) {

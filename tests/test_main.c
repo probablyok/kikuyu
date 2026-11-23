@@ -1,8 +1,31 @@
+#include "cJSON.h"
 #include "cpu_addr.h"
 #include "cpu_state.h"
 #include "safe_wrappers.h"
 #include <stdio.h>
 #include <string.h>
+
+/// @brief Safely parses JSON in buffer to `cJSON` object. `cJSON` object must
+/// be manually freed, and presumably, the buffer should be freed afterwards,
+/// too
+/// @param buffer Character buffer containing JSON to be parsed
+/// @param json `cJSON` object encapsulating parsed JSON in buffer
+/// @return 1 if the JSON could not be parsed (no need to free `json` in
+/// this case), 0 otherwise
+int safe_json_parse(const char* buffer, cJSON** json) {
+    *json = cJSON_Parse(buffer);
+
+    if (*json == NULL) {
+        const char* json_err = cJSON_GetErrorPtr();
+        if (json_err != NULL) {
+            fprintf(stderr, "Error: JSON parse failed before: %s\n", json_err);
+        }
+        cJSON_Delete(*json);
+        return 1;
+    }
+
+    return 0;
+}
 
 static const char TEST_DIR_PATH[] = "tests/test_json/6502/v1";
 static const char JSON_EXTENSION[] = ".json";

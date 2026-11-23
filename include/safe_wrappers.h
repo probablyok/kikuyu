@@ -3,7 +3,6 @@
 
 #define DYNAMIC_BUF_INIT_SIZE 32
 
-#include "cJSON.h"
 #include "cpu_state.h"
 
 #include <stdio.h>
@@ -34,15 +33,6 @@ int safe_read_file_text(const char* filepath, char** buffer);
 /// @param mem_offset Index into the CPU's memory to place binary contents
 /// @return 1 if there was some error operating on the file, 0 otherwise
 int safe_read_file_bin(const char* filepath, Cpu* cpu, long offset);
-
-/// @brief Safely parses JSON in buffer to `cJSON` object. `cJSON` object must
-/// be manually freed, and presumably, the buffer should be freed afterwards,
-/// too
-/// @param buffer Character buffer containing JSON to be parsed
-/// @param json `cJSON` object encapsulating parsed JSON in buffer
-/// @return 1 if the JSON could not be parsed (no need to free `json` in
-/// this case), 0 otherwise
-int safe_json_parse(const char* buffer, cJSON** json);
 
 /// @brief Reads one line in given file stream into given buffer. Memory for the buffer is allocated
 /// within the function and may need to be freed by the user after. Firstly, if the function returns
