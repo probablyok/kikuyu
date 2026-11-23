@@ -24,15 +24,15 @@ void* safe_realloc(void* ptr, size_t n);
 /// to be freed if this function returns 1
 /// @param filepath The string filepath to the file that will be opened
 /// @param buffer Character buffer that holds contents of file
-/// @return 1 if the file was unable to be opened, 0 otherwise
-int safe_read_file_text(const char* filepath, char** buffer);
+/// @return `true` if the file was unable to be opened, `false` otherwise
+bool safe_read_file_text(const char* filepath, char** buffer);
 
 /// @brief Reads the contents of a binary file at given path into CPU memory.
 /// @param filepath The string filepath to the file that will be opened
 /// @param cpu Reference to the CPU struct encapsulating its memory
 /// @param mem_offset Index into the CPU's memory to place binary contents
-/// @return 1 if there was some error operating on the file, 0 otherwise
-int safe_read_file_bin(const char* filepath, Cpu* cpu, long offset);
+/// @return `true` if there was some error operating on the file, `false` otherwise
+bool safe_read_file_bin(const char* filepath, Cpu* cpu, long offset);
 
 /// @brief Reads one line in given file stream into given buffer. Memory for the buffer is allocated
 /// within the function and may need to be freed by the user after. Firstly, if the function returns
