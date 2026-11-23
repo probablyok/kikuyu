@@ -3,13 +3,21 @@
 #include "safe_wrappers.h"
 
 #include <getopt.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
 /// @brief Enum for various representing valid debug commands
-typedef enum { DEBUG_STEP, DEBUG_CYCLE, DEBUG_HELP } DebugCmd;
+typedef enum { CMD_STEP, CMD_CYCLE, CMD_MEM, CMD_HELP, CMD_QUIT } DebugCmdType;
+
+typedef struct {
+    DebugCmdType type;
+    union {
+        CpuWord addr;
+    } arg;
+} DebugCmd;
 
 /// @brief Struct for encapsulating simulation parameters set from command line
 typedef struct {
@@ -116,27 +124,34 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
 /// @param stepping Flag for whether the debugger should keep ticking until CPU sync signal is
 /// `true` after handling
 /// @return `false` for commands that do not tick the CPU in anyway, `true` otherwise
-bool debug_cmd_handler(DebugCmd cmd, bool* skip) {
-    switch (cmd) {
-    case DEBUG_HELP:
+bool debug_cmd_handler(DebugCmd cmd, Cpu* cpu, bool* skip) {
+    switch (cmd.type) {
+    case CMD_HELP:
         printf("Debug mode commands:\n"
-               "h, help\n  Print this command\n"
-               "c, cycle\n  Step the emulator by one tick/cycle\n"
-               "s, step\n  Step the emulator by one instruction\n"
-               "q, quit\n  Quit the emulator\n");
+               "  h, help         Print this command\n"
+               "  c, cycle        Step the emulator by one tick/cycle\n"
+               "  s, step         Step the emulator by one instruction\n"
+               "  m, mem <hex>    Read byte at hex address in CPU memory\n"
+               "  q, quit         Quit the emulator\n");
         return false;
 
-    case DEBUG_CYCLE:
+    case CMD_CYCLE:
         *skip = false;
         return true;
 
-    case DEBUG_STEP:
+    case CMD_STEP:
         *skip = true;
         return true;
 
-    default:
+    case CMD_MEM:
+        printf("$%04X: $%02X\n", cmd.arg.addr, cpu->mem[cmd.arg.addr]);
+        return false;
+
+    case CMD_QUIT:
         return true;
     }
+
+    return false;
 }
 
 /// @brief Handler for reading user input in debug mode
@@ -151,49 +166,59 @@ DebugCmd debug_read_cmd(DebugCmd last) {
         char* line = safe_read_line(stdin, &len, &cap);
         if (line == NULL) {
             printf("\n");
-            free(line);
-            break;
+            return (DebugCmd){.type = CMD_QUIT};
         }
 
         // Strip tailing newline
         line[strcspn(line, "\n")] = '\0';
+        char* verb = strtok(line, " ");
 
-        if (!strcasecmp(line, "q") || !strcasecmp(line, "quit")) {
-            free(line);
-            break;
-        }
-
-        // User is stepping step-wise
-        if (!strcasecmp(line, "s") || !strcasecmp(line, "step")) {
-            free(line);
-            return DEBUG_STEP;
-        }
-
-        // User is stepping cycle-wise
-        if (!strcasecmp(line, "c") || !strcasecmp(line, "cycle")) {
-            free(line);
-            return DEBUG_CYCLE;
-        }
-
-        if (!strcasecmp(line, "h") || !strcasecmp(line, "help")) {
-            free(line);
-            return DEBUG_HELP;
-        }
-
-        // Use whatever the last command is on empty command
-        if (!strcasecmp(line, "")) {
+        // Empty input repeats last valid command with operands
+        if (verb == NULL) {
             free(line);
             return last;
         }
 
-        // Command has no match
-        printf("Invalid command: %s\n", line);
+        if (!strcasecmp(verb, "q") || !strcasecmp(verb, "quit")) {
+            free(line);
+            return (DebugCmd){.type = CMD_QUIT};
+        }
 
+        if (!strcasecmp(verb, "s") || !strcasecmp(verb, "step")) {
+            free(line);
+            return (DebugCmd){.type = CMD_STEP};
+        }
+
+        if (!strcasecmp(verb, "c") || !strcasecmp(verb, "cycle")) {
+            free(line);
+            return (DebugCmd){.type = CMD_CYCLE};
+        }
+
+        if (!strcasecmp(verb, "h") || !strcasecmp(verb, "help")) {
+            free(line);
+            return (DebugCmd){.type = CMD_HELP};
+        }
+
+        if (!strcasecmp(verb, "m") || !strcasecmp(verb, "mem")) {
+            char* arg = strtok(NULL, " ");
+
+            char* endptr = NULL;
+            long val = arg ? strtol(arg, &endptr, 16) : -1;
+
+            // Ignore invalid arguments
+            if (arg && *arg != '\0' && *endptr == '\0' && val >= 0 && val <= 0xFFFF) {
+                free(line);
+                return (DebugCmd){.type = CMD_MEM, .arg.addr = (uint16_t)val};
+            }
+            printf("Usage: mem <hex_addr> (0000-FFFF)\n");
+            free(line);
+            continue;
+        }
+
+        // Fall through to invalid command
+        printf("Invalid command: %s\n", verb);
         free(line);
     }
-
-    printf("Quitting...\n");
-    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char** argv) {
@@ -218,7 +243,7 @@ int main(int argc, char** argv) {
     // Boot CPU
     cpu_reset(&cpu);
 
-    DebugCmd last = DEBUG_STEP;
+    DebugCmd last = {.type = CMD_STEP};
     bool skip = false;
 
     // Tick CPU for user specified number of cycles
@@ -233,8 +258,13 @@ int main(int argc, char** argv) {
                 DebugCmd debug_cmd;
                 do {
                     debug_cmd = debug_read_cmd(last);
+                    // Special handling for QUIT
+                    if (debug_cmd.type == CMD_QUIT) {
+                        printf("Quitting...\n");
+                        exit(EXIT_SUCCESS);
+                    }
                     last = debug_cmd;
-                } while (!debug_cmd_handler(debug_cmd, &skip));
+                } while (!debug_cmd_handler(debug_cmd, &cpu, &skip));
             }
         }
 
