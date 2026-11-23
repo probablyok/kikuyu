@@ -1,6 +1,8 @@
 #ifndef CPU_STATE_H
 #define CPU_STATE_H
 
+#include <stdbool.h>
+
 #include "cpu_macros.h"
 #include "cpu_types.h"
 
@@ -14,20 +16,24 @@ typedef struct Cpu {
     CpuByte opcode;   // Stores opcode currently being worked on
     CpuWord addr_bus; // Stores the current address
     CpuByte data_bus; // Stores the data located at the current address
-    CpuByte is_read;  // Flag specifying whether the CPU is reading/writing to current address
+    bool is_read;     // Flag specifying whether the CPU is reading/writing to current address
 
     // Keep track of multi-cycle address reads from the operand(s)
     CpuWord addr_operand;
     // Indirect addressing write location before setting PC
     CpuWord ind_latch;
     // Flag for branch conditions that branching ALU instructions set
-    CpuByte do_branch;
+    bool do_branch;
     // Flag for indexed addressing
-    CpuByte idx_reg;
+    bool idx_reg;
 
     // State machine pointer
     void (*cur_step)(struct Cpu*);
     void (*pending_alu)(struct Cpu*);
+
+    // External interrupts
+    bool nmi_pending;
+    bool irq_pending;
 
     // CPU Memory
     CpuByte mem[CPU_MEM_MAX_SIZE];
