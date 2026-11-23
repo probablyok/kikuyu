@@ -112,17 +112,31 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
 
 /// @brief Handler for processing valid debug commands with emulator
 /// @param cmd The debug command to be handled
-bool debug_cmd_handler(DebugCmd cmd) {
-    if (cmd == DEBUG_HELP) {
-        printf("Debug mode commands:\n");
-        printf("h, help\n  Print this command\n");
-        printf("c, cycle\n  Step the emulator by one tick/cycle\n");
-        printf("s, step\n  Step the emulator by one instruction\n");
-        printf("q, quit\n  Quit the emulator\n");
+/// @param cpu The emulated 6502 CPU
+/// @param stepping Flag for whether the debugger should keep ticking until CPU sync signal is
+/// `true` after handling
+/// @return `false` for commands that do not tick the CPU in anyway, `true` otherwise
+bool debug_cmd_handler(DebugCmd cmd, bool* skip) {
+    switch (cmd) {
+    case DEBUG_HELP:
+        printf("Debug mode commands:\n"
+               "h, help\n  Print this command\n"
+               "c, cycle\n  Step the emulator by one tick/cycle\n"
+               "s, step\n  Step the emulator by one instruction\n"
+               "q, quit\n  Quit the emulator\n");
         return false;
-    }
 
-    return true;
+    case DEBUG_CYCLE:
+        *skip = false;
+        return true;
+
+    case DEBUG_STEP:
+        *skip = true;
+        return true;
+
+    default:
+        return true;
+    }
 }
 
 /// @brief Handler for reading user input in debug mode
@@ -204,29 +218,32 @@ int main(int argc, char** argv) {
     // Boot CPU
     cpu_reset(&cpu);
 
-    // Default last command on start
-    DebugCmd last = DEBUG_CYCLE;
+    DebugCmd last = DEBUG_STEP;
+    bool skip = false;
 
-    // Fetch-decode-execute for specified number of cycles
+    // Tick CPU for user specified number of cycles
     for (long n = 0; n < cmd_args.num_cycles; n++) {
-        printf("Cycle %ld:\n", n);
-        cpu_disp_state(&cpu);
+        // Just tick CPU until opcode is finished executing
+        if (!skip) {
+            printf("Cycle %ld:\n", n); // Current cycle
+            cpu_disp_state(&cpu);      // CPU state
 
-        // Continually tick when no debug
-        if (!cmd_args.is_debug) {
-            cpu_tick(&cpu);
-            continue;
+            // Process arguments in debug mode
+            if (cmd_args.is_debug) {
+                DebugCmd debug_cmd;
+                do {
+                    debug_cmd = debug_read_cmd(last);
+                    last = debug_cmd;
+                } while (!debug_cmd_handler(debug_cmd, &skip));
+            }
         }
 
-        // Handle debug command
-        DebugCmd debug_cmd;
-        do {
-            debug_cmd = debug_read_cmd(last);
-            last = debug_cmd;
-        } while (!debug_cmd_handler(debug_cmd));
+        cpu_tick(&cpu); // Tick the CPU
 
-        // Tick CPU and update last debug command used
-        cpu_tick(&cpu);
+        // Opcode finished executing
+        if (skip && cpu.sync) {
+            skip = false;
+        }
     }
 
     return 0;
