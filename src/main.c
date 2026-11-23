@@ -123,10 +123,9 @@ int main(int argc, char** argv) {
 
     // Fetch-decode-execute for specified number of cycles
     for (long n = 0; n < cmd_args.num_cycles; n++) {
-        cpu_tick(&cpu);
-
         printf("Cycle %ld:\n", n);
         cpu_disp_state(&cpu);
+        cpu_tick(&cpu);
     }
 
     return 0;
