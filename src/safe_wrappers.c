@@ -85,6 +85,7 @@ bool safe_read_file_bin(const char* filepath, Cpu* cpu, long mem_offset) {
     // Check the binary was read correctly
     if (bytes_read != (size_t)file_size) {
         fprintf(stderr, "Error: Failed to read entire binary.\n");
+        fclose(fp);
         return true;
     }
 
