@@ -3,7 +3,8 @@
 #include "cpu_mem.h"
 #include "cpu_state.h"
 #include "cpu_types.h"
-#include <stdlib.h>
+
+#include <string.h>
 
 // Inter-execution cycle logic that should never be called outside of the addressing pipeline (i.e.
 // only ever call the exposed, first instruction function)
@@ -79,6 +80,9 @@ void cpu_fetch_opcode(Cpu* cpu) {
     if (instruction.first_step == NULL) {
         return; // NOP - invalid instruction pipeline
     }
+
+    // Set human-readable label for pending ALU instruction
+    strcpy(cpu->alu_label, instruction.label);
 
     // Save operation being carried out until address resolved
     cpu->pending_alu = instruction.alu_op;

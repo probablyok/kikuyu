@@ -30,6 +30,7 @@ typedef struct Cpu {
     // State machine pointer
     void (*cur_step)(struct Cpu*);
     void (*pending_alu)(struct Cpu*);
+    char alu_label[4];
 
     // External interrupts/pins
     bool nmi_pending;
@@ -50,6 +51,7 @@ typedef void (*AluOperation)(Cpu*);
 typedef struct {
     CpuStep first_step;
     AluOperation alu_op;
+    char label[4];
 } CpuInstruction;
 
 /// @brief Lookup table where opcode is assigned to CPU instruction with
