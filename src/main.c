@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+
+typedef enum { DEBUG_STEP, DEBUG_CYCLE } DebugCmd;
 
 /// @brief Struct for encapsulating simulation parameters set from command line
 typedef struct {
@@ -13,6 +16,7 @@ typedef struct {
     long bin_offset; // Offset into CPU memory for placing binary file contents (given in base 16)
     long num_cycles; // The number of cycles to run the simulation for after resetting (given in
                      // base 10)
+    bool is_debug;   // Whether to run in debug mode or not
 } CmdArgs;
 
 // Alias to avoid verbosity
@@ -37,6 +41,7 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
     Option long_options[] = {
         {"offset", required_argument, 0, 'o'},
         {"cycles", required_argument, 0, 'c'},
+        {"debug", no_argument, 0, 'd'},
         {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0},
     };
@@ -45,13 +50,14 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
     cmd_args->bin_file = NULL;
     cmd_args->bin_offset = 0x8000;
     cmd_args->num_cycles = 100;
+    cmd_args->is_debug = false;
 
     // For converting strings
     char* endptr;
     long cycles, offset;
 
     // Check all CLI args
-    while ((opt = getopt_long(argc, argv, "o:c:h", long_options, &opt_idx)) != -1) {
+    while ((opt = getopt_long(argc, argv, "o:c:dh", long_options, &opt_idx)) != -1) {
         endptr = NULL;
         switch (opt) {
         case 'o':
@@ -75,6 +81,9 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
             fprintf(stderr, "Error: Invalid cycle count '%s'\n", optarg);
             exit(EXIT_FAILURE);
             break;
+        case 'd':
+            cmd_args->is_debug = true;
+            break;
         case 'h':
             print_usage(argv[0], stdout);
             printf("Simple NMOS 6502 emulator written in C\n\n");
@@ -82,6 +91,7 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
                    "program contents are loaded\n");
             printf("-c, --cycles\n\tspecifies the number of cycles (in base 10) the emulator runs "
                    "for before termination\n");
+            printf("-d, --debug\n\tset the emulator to run in debug mode\n");
             exit(EXIT_SUCCESS);
         default:
             print_usage(argv[0], stderr);
@@ -97,6 +107,55 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
         print_usage(argv[0], stderr);
         exit(EXIT_FAILURE);
     }
+}
+
+DebugCmd debug_read_cmd(DebugCmd last) {
+    while (true) {
+        printf("> ");
+        fflush(stdout);
+
+        size_t len, cap;
+        char* line = safe_read_line(stdin, &len, &cap);
+        if (line == NULL) {
+            printf("\n");
+            free(line);
+            break;
+        }
+
+        // Strip tailing newline
+        line[strcspn(line, "\n")] = '\0';
+
+        if (!strcasecmp(line, "quit")) {
+            free(line);
+            break;
+        }
+
+        // User is stepping step-wise
+        if (!strcasecmp(line, "s") || !strcasecmp(line, "step")) {
+            free(line);
+            return DEBUG_STEP;
+        }
+
+        // User is stepping cycle-wise
+        if (!strcasecmp(line, "c") || !strcasecmp(line, "cycle")) {
+            free(line);
+            return DEBUG_CYCLE;
+        }
+
+        // Use whatever the last command is on empty command
+        if (!strcasecmp(line, "")) {
+            free(line);
+            return last;
+        }
+
+        // Command has no match
+        printf("Invalid command: %s\n", line);
+
+        free(line);
+    }
+
+    printf("Quitting...\n");
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char** argv) {
@@ -121,11 +180,25 @@ int main(int argc, char** argv) {
     // Boot CPU
     cpu_reset(&cpu);
 
+    // Default last command on start
+    DebugCmd last = DEBUG_CYCLE;
+
     // Fetch-decode-execute for specified number of cycles
     for (long n = 0; n < cmd_args.num_cycles; n++) {
         printf("Cycle %ld:\n", n);
         cpu_disp_state(&cpu);
+
+        // Continually tick when no debug
+        if (!cmd_args.is_debug) {
+            cpu_tick(&cpu);
+            continue;
+        }
+
+        // Handle debug
+        DebugCmd debug_cmd = debug_read_cmd(last);
         cpu_tick(&cpu);
+
+        last = debug_cmd;
     }
 
     return 0;
