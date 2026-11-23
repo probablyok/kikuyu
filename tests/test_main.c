@@ -13,7 +13,7 @@ static unsigned int test_opcode(const char* filepath) {
 
     // Load JSON
     char* json_buf = NULL;
-    if (safe_read_file(filepath, &json_buf)) {
+    if (safe_read_file_text(filepath, &json_buf)) {
         return 1;
     }
     cJSON* root = NULL;
