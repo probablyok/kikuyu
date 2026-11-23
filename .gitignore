@@ -35,8 +35,12 @@
 *.i*86
 *.x86_64
 *.hex
+*.o65
 kikuyu
 run_tests
+
+# Testing ASM
+*.asm
 
 # Debug files
 *.dSYM/
