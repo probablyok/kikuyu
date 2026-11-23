@@ -1,11 +1,21 @@
 #include "safe_wrappers.h"
 #include "cpu_macros.h"
-#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 void* safe_malloc(size_t n) {
     void* p = (void*)malloc(n);
     if (p == NULL) {
         fprintf(stderr, "Error: Malloc call failed. Aborting...");
+        abort();
+    }
+    return p;
+}
+
+void* safe_realloc(void* ptr, size_t n) {
+    void* p = (void*)realloc(ptr, n);
+    if (p == NULL) {
+        fprintf(stderr, "Error: Realloc call failed. Aborting...");
         abort();
     }
     return p;
@@ -96,4 +106,49 @@ int safe_json_parse(const char* buffer, cJSON** json) {
     }
 
     return 0;
+}
+
+char* safe_read_line(FILE* stream, size_t* len_ptr, size_t* cap_ptr) {
+    // Handle invalid stream case
+    if (!stream) {
+        return NULL;
+    }
+
+    // Setup buffer
+    size_t cap = DYNAMIC_BUF_INIT_SIZE;
+    size_t len = 0;
+    char* buf = safe_malloc(cap * sizeof(char));
+
+    // Read character into buffer until EOF or '\n'
+    int c;
+    while ((c = fgetc(stream)) != EOF) {
+        // Double buffer size if new char can't fit
+        if (len + 1 >= cap) {
+            size_t new_cap = cap * 2;
+            char* tmp = realloc(buf, new_cap);
+
+            buf = tmp;
+            cap = new_cap;
+        }
+        buf[len++] = (char)c;
+
+        // Escape on newline character
+        if (c == '\n') {
+            break;
+        }
+    }
+
+    // Return NULL if we read zero characters
+    if (len == 0) {
+        free(buf);
+        return NULL;
+    }
+
+    // Null terminate buffered line
+    buf[len] = '\0';
+
+    // Return memory to user
+    *len_ptr = len;
+    *cap_ptr = cap;
+    return buf;
 }
