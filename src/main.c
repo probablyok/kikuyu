@@ -110,7 +110,22 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
     }
 }
 
-/// @brief Handler for processing user input in debug mode
+/// @brief Handler for processing valid debug commands with emulator
+/// @param cmd The debug command to be handled
+bool debug_cmd_handler(DebugCmd cmd) {
+    if (cmd == DEBUG_HELP) {
+        printf("Debug mode commands:\n");
+        printf("h, help\n  Print this command\n");
+        printf("c, cycle\n  Step the emulator by one tick/cycle\n");
+        printf("s, step\n  Step the emulator by one instruction\n");
+        printf("q, quit\n  Quit the emulator\n");
+        return false;
+    }
+
+    return true;
+}
+
+/// @brief Handler for reading user input in debug mode
 /// @param last The last valid debug command from previous input
 /// @param return Debug command to used based on user input
 DebugCmd debug_read_cmd(DebugCmd last) {
@@ -129,7 +144,7 @@ DebugCmd debug_read_cmd(DebugCmd last) {
         // Strip tailing newline
         line[strcspn(line, "\n")] = '\0';
 
-        if (!strcasecmp(line, "quit")) {
+        if (!strcasecmp(line, "q") || !strcasecmp(line, "quit")) {
             free(line);
             break;
         }
@@ -144,6 +159,11 @@ DebugCmd debug_read_cmd(DebugCmd last) {
         if (!strcasecmp(line, "c") || !strcasecmp(line, "cycle")) {
             free(line);
             return DEBUG_CYCLE;
+        }
+
+        if (!strcasecmp(line, "h") || !strcasecmp(line, "help")) {
+            free(line);
+            return DEBUG_HELP;
         }
 
         // Use whatever the last command is on empty command
@@ -198,11 +218,15 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        // Handle debug
-        DebugCmd debug_cmd = debug_read_cmd(last);
-        cpu_tick(&cpu);
+        // Handle debug command
+        DebugCmd debug_cmd;
+        do {
+            debug_cmd = debug_read_cmd(last);
+            last = debug_cmd;
+        } while (!debug_cmd_handler(debug_cmd));
 
-        last = debug_cmd;
+        // Tick CPU and update last debug command used
+        cpu_tick(&cpu);
     }
 
     return 0;
