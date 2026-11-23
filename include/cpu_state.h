@@ -31,9 +31,10 @@ typedef struct Cpu {
     void (*cur_step)(struct Cpu*);
     void (*pending_alu)(struct Cpu*);
 
-    // External interrupts
+    // External interrupts/pins
     bool nmi_pending;
     bool irq_pending;
+    bool sync; // Goes high on opcode fetch phase
 
     // CPU Memory
     CpuByte mem[CPU_MEM_MAX_SIZE];
