@@ -109,6 +109,9 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
     }
 }
 
+/// @brief Handler for processing user input in debug mode
+/// @param last The last valid debug command from previous input
+/// @param return Debug command to used based on user input
 DebugCmd debug_read_cmd(DebugCmd last) {
     while (true) {
         printf("> ");
