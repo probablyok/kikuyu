@@ -8,7 +8,8 @@
 #include <string.h>
 #include <strings.h>
 
-typedef enum { DEBUG_STEP, DEBUG_CYCLE } DebugCmd;
+/// @brief Enum for various representing valid debug commands
+typedef enum { DEBUG_STEP, DEBUG_CYCLE, DEBUG_HELP } DebugCmd;
 
 /// @brief Struct for encapsulating simulation parameters set from command line
 typedef struct {
