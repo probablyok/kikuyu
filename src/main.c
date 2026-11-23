@@ -10,7 +10,7 @@
 #include <strings.h>
 
 /// @brief Enum for various representing valid debug commands
-typedef enum { CMD_STEP, CMD_CYCLE, CMD_MEM, CMD_HELP, CMD_QUIT } DebugCmdType;
+typedef enum { CMD_STEP, CMD_CYCLE, CMD_PRINT, CMD_MEM, CMD_HELP, CMD_QUIT } DebugCmdType;
 
 typedef struct {
     DebugCmdType type;
@@ -131,6 +131,7 @@ bool debug_cmd_handler(DebugCmd cmd, Cpu* cpu, bool* skip) {
                "  h, help         Print this command\n"
                "  c, cycle        Step the emulator by one tick/cycle\n"
                "  s, step         Step the emulator by one instruction\n"
+               "  p, print        Print the CPU state\n"
                "  m, mem <hex>    Read byte at hex address in CPU memory\n"
                "  q, quit         Quit the emulator\n");
         return false;
@@ -142,6 +143,10 @@ bool debug_cmd_handler(DebugCmd cmd, Cpu* cpu, bool* skip) {
     case CMD_STEP:
         *skip = true;
         return true;
+
+    case CMD_PRINT:
+        cpu_disp_state(cpu);
+        return false;
 
     case CMD_MEM:
         printf("$%04X: $%02X\n", cmd.arg.addr, cpu->mem[cmd.arg.addr]);
@@ -192,6 +197,11 @@ DebugCmd debug_read_cmd(DebugCmd last) {
         if (!strcasecmp(verb, "c") || !strcasecmp(verb, "cycle")) {
             free(line);
             return (DebugCmd){.type = CMD_CYCLE};
+        }
+
+        if (!strcasecmp(verb, "p") || !strcasecmp(verb, "print")) {
+            free(line);
+            return (DebugCmd){.type = CMD_PRINT};
         }
 
         if (!strcasecmp(verb, "h") || !strcasecmp(verb, "help")) {
