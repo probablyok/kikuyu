@@ -120,7 +120,7 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
             printf("-o, --offset\n\tspecifies the offset into CPU memory (in base 16) where the "
                    "program contents are loaded\n");
             printf("-c, --cycles\n\tspecifies the number of cycles (in base 10) the emulator runs "
-                   "for before termination\n");
+                   "for before termination. Optionally, specify \"inf\" to run indefinitely\n");
             printf("-d, --debug\n\tset the emulator to run in debug mode\n");
             exit(EXIT_SUCCESS);
         default:
