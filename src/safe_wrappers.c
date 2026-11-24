@@ -111,7 +111,7 @@ char* safe_read_line(FILE* stream, size_t* len_ptr, size_t* cap_ptr) {
         // Double buffer size if new char can't fit
         if (len + 1 >= cap) {
             size_t new_cap = cap * 2;
-            char* tmp = realloc(buf, new_cap);
+            char* tmp = safe_realloc(buf, new_cap);
 
             buf = tmp;
             cap = new_cap;
