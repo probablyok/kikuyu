@@ -35,7 +35,6 @@ typedef struct Cpu {
     // External interrupts/pins
     bool nmi_pending;
     bool irq_pending;
-    bool sync; // Goes high on opcode fetch phase
 
     // CPU Memory
     CpuByte mem[CPU_MEM_MAX_SIZE];

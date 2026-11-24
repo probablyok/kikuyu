@@ -463,14 +463,7 @@ void cpu_status_reg_update_interrupt_disable(Cpu* cpu, int data) {
 
 int cpu_inst_implemented(CpuByte opcode) { return INSTRUCTION_TABLE[opcode].first_step == NULL; }
 
-void cpu_tick(Cpu* cpu) {
-    cpu->sync = false;
-    if (cpu->cur_step == cpu_fetch_opcode) {
-        cpu->sync = true;
-    }
-
-    cpu->cur_step(cpu);
-}
+void cpu_tick(Cpu* cpu) { cpu->cur_step(cpu); }
 
 void cpu_reset(Cpu* cpu) {
     // Fetch PC from RESET vector

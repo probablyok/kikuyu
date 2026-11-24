@@ -1,3 +1,4 @@
+#include "cpu_addr.h"
 #include "cpu_macros.h"
 #include "cpu_state.h"
 #include "safe_wrappers.h"
@@ -284,7 +285,7 @@ int main(int argc, char** argv) {
         cpu_tick(&cpu); // Tick the CPU
 
         // Opcode finished executing
-        if (skip && cpu.sync) {
+        if (skip && cpu.cur_step == cpu_fetch_opcode) {
             skip = false;
         }
     }
