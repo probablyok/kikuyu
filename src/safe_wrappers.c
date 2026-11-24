@@ -1,5 +1,6 @@
 #include "safe_wrappers.h"
 #include "cpu_macros.h"
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -30,9 +31,13 @@ bool safe_read_file_text(const char* filepath, char** buffer) {
     }
 
     // Get file size
-    fseek(fp, 0, SEEK_END);
+    int seek_end = fseek(fp, 0, SEEK_END);
     long file_size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
+    int seek_set = fseek(fp, 0, SEEK_SET);
+
+    if ((seek_end == -1 || seek_set == -1) || file_size == LONG_MAX) {
+        fprintf(stderr, "Error: Unable to get file size for \"%s\".\n", filepath);
+    }
 
     // Read file into buffer
     *buffer = (char*)safe_malloc(file_size + 1);
@@ -67,9 +72,13 @@ bool safe_read_file_bin(const char* filepath, Cpu* cpu, long mem_offset) {
     }
 
     // Get file size
-    fseek(fp, 0, SEEK_END);
+    int seek_end = fseek(fp, 0, SEEK_END);
     long file_size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
+    int seek_set = fseek(fp, 0, SEEK_SET);
+
+    if ((seek_end == -1 || seek_set == -1) || file_size == LONG_MAX) {
+        fprintf(stderr, "Error: Unable to get file size for \"%s\".\n", filepath);
+    }
 
     // Check file contents fit in memory
     if (file_size <= 0 || (mem_offset + file_size) > CPU_MEM_MAX_SIZE) {
