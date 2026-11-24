@@ -2,6 +2,7 @@
 #include "cpu_state.h"
 #include "safe_wrappers.h"
 
+#include <errno.h>
 #include <getopt.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -71,8 +72,9 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
         switch (opt) {
         case 'o':
             // Convert the string rep. of cycles to long
+            errno = 0;
             offset = strtol(optarg, &endptr, 16);
-            if (optarg && *optarg != '\0' && *endptr == '\0') {
+            if (optarg && *optarg != '\0' && *endptr == '\0' && errno != ERANGE) {
                 // Conversion successful
                 cmd_args->bin_offset = offset;
                 break;
@@ -81,8 +83,9 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
             exit(EXIT_FAILURE);
         case 'c':
             // Convert the string rep. of cycles to long
+            errno = 0;
             cycles = strtol(optarg, &endptr, 10);
-            if (optarg && *optarg != '\0' && *endptr == '\0') {
+            if (optarg && *optarg != '\0' && *endptr == '\0' && errno != ERANGE && cycles > 0) {
                 // Conversion successful
                 cmd_args->num_cycles = cycles;
                 break;
