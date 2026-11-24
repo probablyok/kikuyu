@@ -35,6 +35,7 @@ typedef struct Cpu {
     // External interrupts/pins
     bool nmi_pending;
     bool irq_pending;
+    bool servicing_nmi;
 
     // CPU Memory
     CpuByte mem[CPU_MEM_MAX_SIZE];

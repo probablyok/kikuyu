@@ -12,7 +12,16 @@
 #include <strings.h>
 
 /// @brief Enum for various representing valid debug commands
-typedef enum { CMD_STEP, CMD_CYCLE, CMD_PRINT, CMD_MEM, CMD_HELP, CMD_QUIT } DebugCmdType;
+typedef enum {
+    CMD_STEP,
+    CMD_CYCLE,
+    CMD_PRINT,
+    CMD_MEM,
+    CMD_HELP,
+    CMD_QUIT,
+    CMD_IRQ,
+    CMD_NMI
+} DebugCmdType;
 
 typedef struct {
     DebugCmdType type;
@@ -137,6 +146,8 @@ bool debug_cmd_handler(DebugCmd cmd, Cpu* cpu, bool* skip) {
                "  s, step         Step the emulator by one instruction\n"
                "  p, print        Print the CPU state\n"
                "  m, mem <hex>    Read byte at hex address in CPU memory\n"
+               "  n, nmi          Assert external NMI line\n"
+               "  i, irq          Trigger external IRQ line\n"
                "  q, quit         Quit the emulator\n");
         return false;
 
@@ -154,6 +165,20 @@ bool debug_cmd_handler(DebugCmd cmd, Cpu* cpu, bool* skip) {
 
     case CMD_MEM:
         printf("$%04X: $%02X\n", cmd.arg.addr, cpu->mem[cmd.arg.addr]);
+        return false;
+
+    case CMD_IRQ:
+        cpu->irq_pending = true;
+        if (cpu->sr & CPU_FLAG_I) {
+            printf("IRQ asserted (masked by I=1)\n");
+        } else {
+            printf("IRQ asserted\n");
+        }
+        return false;
+
+    case CMD_NMI:
+        cpu->nmi_pending = true;
+        printf("NMI triggered\n");
         return false;
 
     case CMD_QUIT:
@@ -227,6 +252,16 @@ DebugCmd debug_read_cmd(DebugCmd last) {
             printf("Usage: mem <hex_addr> (0000-FFFF)\n");
             free(line);
             continue;
+        }
+
+        if (!strcasecmp(verb, "n") || !strcasecmp(verb, "nmi")) {
+            free(line);
+            return (DebugCmd){.type = CMD_NMI};
+        }
+
+        if (!strcasecmp(verb, "i") || !strcasecmp(verb, "irq")) {
+            free(line);
+            return (DebugCmd){.type = CMD_IRQ};
         }
 
         // Fall through to invalid command

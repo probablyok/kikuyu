@@ -463,7 +463,16 @@ void cpu_status_reg_update_interrupt_disable(Cpu* cpu, int data) {
 
 int cpu_inst_implemented(CpuByte opcode) { return INSTRUCTION_TABLE[opcode].first_step == NULL; }
 
-void cpu_tick(Cpu* cpu) { cpu->cur_step(cpu); }
+void cpu_tick(Cpu* cpu) {
+    if (cpu->cur_step == cpu_fetch_opcode) {
+        // External NMI/IRQ interrupt pending
+        if (cpu->nmi_pending || (cpu->irq_pending && !(cpu->sr & CPU_FLAG_I))) {
+            cpu_addr_int_dummy1(cpu); // Override next intended step
+            return;
+        }
+    }
+    cpu->cur_step(cpu);
+}
 
 void cpu_reset(Cpu* cpu) {
     // Fetch PC from RESET vector
@@ -471,7 +480,10 @@ void cpu_reset(Cpu* cpu) {
                cpu_mem_read(cpu, CPU_MEM_RESET_VEC_ADDR_L));
     cpu->sp = 0xFD;                    // Stack pointer init
     cpu->sr = CPU_FLAG_U | CPU_FLAG_I; // Disable IRQs and set unused flag
-    cpu->cur_step = cpu_fetch_opcode;  // Start fetch-decode-execute
+    cpu->nmi_pending = false;
+    cpu->irq_pending = false;
+    cpu->servicing_nmi = false;
+    cpu->cur_step = cpu_fetch_opcode; // Start fetch-decode-execute
 }
 
 void cpu_disp_state(Cpu* cpu) {

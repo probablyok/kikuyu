@@ -107,4 +107,8 @@ void cpu_addr_jsr_fetch_low(Cpu* cpu);
 /// @brief The emulated 6502 CPU
 void cpu_addr_rts_dummy1(Cpu* cpu);
 
+/// @brief Entrypoint for hardware NMI/IRQ interrupt sequence
+/// @param cpu The emulated 6502 CPU
+void cpu_addr_int_dummy1(Cpu* cpu);
+
 #endif // CPU_ADDR_H

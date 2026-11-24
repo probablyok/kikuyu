@@ -70,6 +70,12 @@ static void cpu_addr_rts_dummy2(Cpu* cpu);
 static void cpu_addr_rts_pull1(Cpu* cpu);
 static void cpu_addr_rts_pull2(Cpu* cpu);
 static void cpu_addr_rts_inc(Cpu* cpu);
+static void cpu_addr_int_dummy2(Cpu* cpu);
+static void cpu_addr_int_push1(Cpu* cpu);
+static void cpu_addr_int_push2(Cpu* cpu);
+static void cpu_addr_int_push3(Cpu* cpu);
+static void cpu_addr_int_vec_low_fetch(Cpu* cpu);
+static void cpu_addr_int_vec_high_fetch(Cpu* cpu);
 
 void cpu_fetch_opcode(Cpu* cpu) {
     // Read opcode from PC
@@ -864,5 +870,61 @@ static void cpu_addr_rts_pull2(Cpu* cpu) {
 static void cpu_addr_rts_inc(Cpu* cpu) {
     // Fix off by one in stack
     cpu_mem_read(cpu, cpu->pc++);
+    cpu->cur_step = cpu_fetch_opcode;
+}
+
+void cpu_addr_int_dummy1(Cpu* cpu) {
+    // NMI has priority over IRQ
+    if (cpu->nmi_pending) {
+        cpu->nmi_pending = false;
+        cpu->servicing_nmi = true;
+        strcpy(cpu->alu_label, "NMI");
+    } else {
+        cpu->irq_pending = false;
+        cpu->servicing_nmi = false;
+        strcpy(cpu->alu_label, "IRQ");
+    }
+
+    // Dummy read at PC without inc
+    cpu_mem_read(cpu, cpu->pc);
+    cpu->cur_step = cpu_addr_int_dummy2;
+}
+
+static void cpu_addr_int_dummy2(Cpu* cpu) {
+    // Second dummy read at PC
+    cpu_mem_read(cpu, cpu->pc);
+    cpu->cur_step = cpu_addr_int_push1;
+}
+
+static void cpu_addr_int_push1(Cpu* cpu) {
+    // Push PCH onto stack
+    cpu_mem_write(cpu, CPU_MEM_STACK_START + cpu->sp--, cpu->pc >> 8);
+    cpu->cur_step = cpu_addr_int_push2;
+}
+
+static void cpu_addr_int_push2(Cpu* cpu) {
+    // Push PCL onto stack
+    cpu_mem_write(cpu, CPU_MEM_STACK_START + cpu->sp--, cpu->pc & 0x00FF);
+    cpu->cur_step = cpu_addr_int_push3;
+}
+
+static void cpu_addr_int_push3(Cpu* cpu) {
+    // Push SR with B=0 and U=1, then mask further IRQs
+    cpu_mem_write(cpu, CPU_MEM_STACK_START + cpu->sp--, (cpu->sr & ~CPU_FLAG_B) | CPU_FLAG_U);
+    cpu->sr |= CPU_FLAG_I;
+    cpu->cur_step = cpu_addr_int_vec_low_fetch;
+}
+
+static void cpu_addr_int_vec_low_fetch(Cpu* cpu) {
+    // Fetch vector low byte
+    CpuWord vec_low = cpu->servicing_nmi ? CPU_MEM_NMI_VEC_ADDR_L : CPU_MEM_IRQ_VEC_ADDR_L;
+    cpu->addr_operand = (CpuWord)cpu_mem_read(cpu, vec_low);
+    cpu->cur_step = cpu_addr_int_vec_high_fetch;
+}
+
+static void cpu_addr_int_vec_high_fetch(Cpu* cpu) {
+    // Cycle 7: Fetch vector high byte and jump to ISR
+    CpuWord vec_high = cpu->servicing_nmi ? CPU_MEM_NMI_VEC_ADDR_H : CPU_MEM_IRQ_VEC_ADDR_H;
+    cpu->pc = ((CpuWord)cpu_mem_read(cpu, vec_high) << 8) | cpu->addr_operand;
     cpu->cur_step = cpu_fetch_opcode;
 }
