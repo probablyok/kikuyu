@@ -36,6 +36,7 @@
 *.x86_64
 *.hex
 *.o65
+*.bin
 kikuyu
 run_tests
 
