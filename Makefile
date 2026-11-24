@@ -1,24 +1,21 @@
-# Compiler flags
-CC := gcc
-CFLAGS := -std=c99 -Wall -Wextra -Wpedantic -O2
-DEBUG := -g
-LDFLAGS :=
-
 # Directories
-SRC_DIR := src
-INC_DIR := include
-OBJ_DIR := obj
+SRC_DIR  := src
+INC_DIR  := include
+OBJ_DIR  := obj
 TEST_DIR := tests
 
-# Add include directory
-CFLAGS += -I$(INC_DIR)
+# Compiler & linker flags
+CC      := gcc
+CFLAGS  := -std=c99 -Wall -Wextra -Wpedantic -O2 -I$(INC_DIR) -MMD -MP
+DEBUG   := -g
+LDLIBS  := -lraylib -lm
 
 # Target executable and src/obj mappings
-TARGET := kikuyu
+TARGET      := kikuyu
 TEST_TARGET := run_tests
 
 # Sources
-SRCS := $(wildcard $(SRC_DIR)/*.c)
+SRCS     := $(wildcard $(SRC_DIR)/*.c)
 LIB_SRCS := $(filter-out $(SRC_DIR)/main.c, $(SRCS))
 
 # Objects
@@ -30,20 +27,14 @@ TEST_SRCS := $(wildcard $(TEST_DIR)/*.c)
 TEST_OBJS := $(TEST_SRCS:$(TEST_DIR)/%.c=$(OBJ_DIR)/test_%.o)
 
 TEST_JSON_REPO_URL := https://github.com/SingleStepTests/65x02.git
-TEST_JSON_DIR := tests/test_json
+TEST_JSON_DIR      := tests/test_json
 TEST_JSON_REPO_DIR := 6502/v1
-
-# Auto-generate dependencies
-CFLAGS += -MMD -MP
 
 .DEFAULT_GOAL := all
 .PHONY: all debug test clean clean-tests fetch-tests
 
 # Build main application
 all: $(TARGET)
-
-$(TARGET): $(LIB_OBJS) $(MAIN_OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Get JSON tests from remote repo
 fetch-tests:
@@ -61,8 +52,11 @@ clean-tests:
 # Build and run the test suite
 test: fetch-tests $(TEST_TARGET)
 
+$(TARGET): $(LIB_OBJS) $(MAIN_OBJ)
+	$(CC) -o $@ $^ $(LDLIBS)
+
 $(TEST_TARGET): $(LIB_OBJS) $(TEST_OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDLIBS)
 
 # Compile standard C sources
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
@@ -82,9 +76,7 @@ debug: clean $(TARGET)
 
 # Clean artifacts
 clean:
-	rm -rf $(TARGET)
-	rm -rf $(TEST_TARGET)
-	rm -rf $(OBJ_DIR)
+	rm -rf $(TARGET) $(TEST_TARGET) $(OBJ_DIR)
 
 # Dependencies include
--include $(LIB_OBJS:.o=.d) $(MAIN_OBJ:.o=.d $TEST_OBJS:.o.d)
+-include $(LIB_OBJS:.o=.d) $(MAIN_OBJ:.o=.d) $(TEST_OBJS:.o=.d)
