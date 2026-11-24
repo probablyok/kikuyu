@@ -754,7 +754,7 @@ static void cpu_addr_brk_push2(Cpu* cpu) {
 
 static void cpu_addr_brk_push3(Cpu* cpu) {
     // Push SR onto the stack
-    cpu_mem_write(cpu, CPU_MEM_STACK_START + cpu->sp--, cpu->sr | CPU_FLAG_B);
+    cpu_mem_write(cpu, CPU_MEM_STACK_START + cpu->sp--, cpu->sr | CPU_FLAG_B | CPU_FLAG_U);
 
     // Disable interrupts to prevent nested IRQs
     cpu->sr |= CPU_FLAG_I;
