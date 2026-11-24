@@ -32,11 +32,12 @@ typedef struct {
 
 /// @brief Struct for encapsulating simulation parameters set from command line
 typedef struct {
-    char* bin_file;  // Filepath to file representing assembled 6502 code
-    long bin_offset; // Offset into CPU memory for placing binary file contents (given in base 16)
-    long num_cycles; // The number of cycles to run the simulation for after resetting (given in
-                     // base 10)
-    bool is_debug;   // Whether to run in debug mode or not
+    char* bin_file;   // Filepath to file representing assembled 6502 code
+    long bin_offset;  // Offset into CPU memory for placing binary file contents (given in base 16)
+    long num_cycles;  // The number of cycles to run the simulation for after resetting (given in
+                      // base 10)
+    bool is_debug;    // Whether to run in debug mode or not
+    bool is_infinite; // Whether to run simulation indefinitely
 } CmdArgs;
 
 // Alias to avoid verbosity
@@ -68,9 +69,10 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
 
     // Set defaults for processed cmd args
     cmd_args->bin_file = NULL;
-    cmd_args->bin_offset = 0x8000;
+    cmd_args->bin_offset = 0;
     cmd_args->num_cycles = 100;
     cmd_args->is_debug = false;
+    cmd_args->is_infinite = false;
 
     // For converting strings
     char* endptr;
@@ -92,6 +94,12 @@ void handle_args(int argc, char** argv, CmdArgs* cmd_args) {
             fprintf(stderr, "Error: Invalid hex offset '%s'\n", optarg);
             exit(EXIT_FAILURE);
         case 'c':
+            // Check if user specified infinite cycles
+            if (optarg && !strcasecmp(optarg, "inf")) {
+                cmd_args->is_infinite = true;
+                break;
+            }
+
             // Convert the string rep. of cycles to long
             errno = 0;
             cycles = strtol(optarg, &endptr, 10);
@@ -296,11 +304,11 @@ int main(int argc, char** argv) {
     bool skip = false;
 
     // Tick CPU for user specified number of cycles
-    for (long n = 0; n < cmd_args.num_cycles; n++) {
+    for (uint64_t n = 0; n < (uint64_t)cmd_args.num_cycles || cmd_args.is_infinite; n++) {
         // Just tick CPU until opcode is finished executing
         if (!skip) {
-            printf("Cycle %ld:\n", n); // Current cycle
-            cpu_disp_state(&cpu);      // CPU state
+            printf("Cycle %llu:\n", (unsigned long long)n); // Current cycle
+            cpu_disp_state(&cpu);                           // CPU state
 
             // Process arguments in debug mode
             if (cmd_args.is_debug) {
