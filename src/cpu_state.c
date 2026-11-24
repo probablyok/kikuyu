@@ -360,10 +360,10 @@ const CpuInstruction INSTRUCTION_TABLE[256] = {
     // PRE-INDEXED INDIRECT ADDRESSING
     [CPU_OP_ORA_PRE_IDX_INDIRECT] = {.first_step = cpu_addr_pre_idx_indirect_low,
                                      .alu_op = cpu_alu_ora,
-                                     .label = "AND"},
+                                     .label = "ORA"},
     [CPU_OP_AND_PRE_IDX_INDIRECT] = {.first_step = cpu_addr_pre_idx_indirect_low,
                                      .alu_op = cpu_alu_and,
-                                     .label = "ORA"},
+                                     .label = "AND"},
     [CPU_OP_EOR_PRE_IDX_INDIRECT] = {.first_step = cpu_addr_pre_idx_indirect_low,
                                      .alu_op = cpu_alu_eor,
                                      .label = "EOR"},
