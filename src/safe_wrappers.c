@@ -7,7 +7,7 @@
 void* safe_malloc(size_t n) {
     void* p = (void*)malloc(n);
     if (p == NULL) {
-        fprintf(stderr, "Error: Malloc call failed. Aborting...");
+        fprintf(stderr, "Error: Malloc call failed. Aborting...\n");
         abort();
     }
     return p;
@@ -16,7 +16,7 @@ void* safe_malloc(size_t n) {
 void* safe_realloc(void* ptr, size_t n) {
     void* p = (void*)realloc(ptr, n);
     if (p == NULL) {
-        fprintf(stderr, "Error: Realloc call failed. Aborting...");
+        fprintf(stderr, "Error: Realloc call failed. Aborting...\n");
         abort();
     }
     return p;

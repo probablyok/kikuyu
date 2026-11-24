@@ -13,7 +13,7 @@ static void cpu_addr_indirect_jmp_read1(Cpu* cpu);
 static void cpu_addr_indirect_jmp_read2(Cpu* cpu);
 static void cpu_addr_absolute_jmp_high(Cpu* cpu);
 static void cpu_addr_absolute_high(Cpu* cpu);
-static void cpu_addr_aboslute(Cpu* cpu);
+static void cpu_addr_absolute(Cpu* cpu);
 static void cpu_addr_absolute_rmw_high(Cpu* cpu);
 static void cpu_addr_absolute_rmw_read(Cpu* cpu);
 static void cpu_addr_absolute_rmw_write(Cpu* cpu);
@@ -178,10 +178,10 @@ void cpu_addr_absolute_low(Cpu* cpu) {
 static void cpu_addr_absolute_high(Cpu* cpu) {
     // Read the high byte
     cpu->addr_operand = ((CpuWord)(cpu_mem_read(cpu, cpu->pc++)) << 8) | cpu->addr_operand;
-    cpu->cur_step = cpu_addr_aboslute;
+    cpu->cur_step = cpu_addr_absolute;
 }
 
-static void cpu_addr_aboslute(Cpu* cpu) {
+static void cpu_addr_absolute(Cpu* cpu) {
     // Read data from opcode address
     cpu_mem_read(cpu, cpu->addr_operand);
 

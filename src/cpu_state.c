@@ -487,10 +487,10 @@ void cpu_disp_state(Cpu* cpu) {
            cpu->y, cpu->sp);
 
     // Status register
-    printf("  Status:    0x%02X [N:%d V:%d U:%d B:%d D:%d I:%d C:%d]\n", cpu->sr,
+    printf("  Status:    0x%02X [N:%d V:%d U:%d B:%d D:%d I:%d Z:%d C:%d]\n", cpu->sr,
            !!(cpu->sr & CPU_FLAG_N), !!(cpu->sr & CPU_FLAG_V), !!(cpu->sr & CPU_FLAG_U),
            !!(cpu->sr & CPU_FLAG_B), !!(cpu->sr & CPU_FLAG_D), !!(cpu->sr & CPU_FLAG_I),
-           !!(cpu->sr & CPU_FLAG_C));
+           !!(cpu->sr & CPU_FLAG_Z), !!(cpu->sr & CPU_FLAG_C));
 
     // Buses
     printf("  Buses:     Addr:0x%04X Data:0x%02X Opcode:0x%02X/%s R/W:%s\n", cpu->addr_bus,

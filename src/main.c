@@ -178,8 +178,8 @@ DebugCmd debug_read_cmd(DebugCmd last) {
         }
 
         // Strip tailing newline
-        line[strcspn(line, "\n")] = '\0';
-        char* verb = strtok(line, " ");
+        line[strcspn(line, "\n\r")] = '\0';
+        char* verb = strtok(line, " \t");
 
         // Empty input repeats last valid command with operands
         if (verb == NULL) {
@@ -213,7 +213,7 @@ DebugCmd debug_read_cmd(DebugCmd last) {
         }
 
         if (!strcasecmp(verb, "m") || !strcasecmp(verb, "mem")) {
-            char* arg = strtok(NULL, " ");
+            char* arg = strtok(NULL, " \t");
 
             char* endptr = NULL;
             long val = arg ? strtol(arg, &endptr, 16) : -1;
