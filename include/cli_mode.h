@@ -13,7 +13,8 @@ typedef enum {
     CMD_HELP,
     CMD_QUIT,
     CMD_IRQ,
-    CMD_NMI
+    CMD_NMI,
+    CMD_RESET,
 } DebugCmdType;
 
 typedef struct {

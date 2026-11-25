@@ -1,5 +1,6 @@
 #include "cli_mode.h"
 #include "cpu_addr.h"
+#include "cpu_state.h"
 #include "safe_wrappers.h"
 
 #include "string.h"
@@ -12,6 +13,12 @@ void cli_run(const CmdArgs* cmd_args, Cpu* cpu) {
 
     // Tick CPU for user specified number of cycles
     for (uint64_t n = 0; n < (uint64_t)cmd_args->num_cycles || cmd_args->is_infinite; n++) {
+        // Reset handler
+        if (last.type == CMD_RESET) {
+            n = 0;
+            cpu_reset(cpu);
+        }
+
         // Just tick CPU until opcode is finished executing
         if (!skip) {
             printf("Cycle %llu:\n", (unsigned long long)n); // Current cycle
@@ -52,6 +59,7 @@ bool debug_cmd_handler(DebugCmd cmd, Cpu* cpu, bool* skip) {
                "  m, mem <hex>    Read byte at hex address in CPU memory\n"
                "  n, nmi          Assert external NMI line\n"
                "  i, irq          Trigger external IRQ line\n"
+               "  r, reset        Reset the CPU and cycle count\n"
                "  q, quit         Quit the emulator\n");
         return false;
 
@@ -84,6 +92,9 @@ bool debug_cmd_handler(DebugCmd cmd, Cpu* cpu, bool* skip) {
         cpu->nmi_pending = true;
         printf("NMI triggered\n");
         return false;
+
+    case CMD_RESET:
+        return true;
 
     case CMD_QUIT:
         return true;
@@ -163,6 +174,11 @@ DebugCmd debug_read_cmd(DebugCmd last) {
         if (!strcasecmp(verb, "i") || !strcasecmp(verb, "irq")) {
             free(line);
             return (DebugCmd){.type = CMD_IRQ};
+        }
+
+        if (!strcasecmp(verb, "r") || !strcasecmp(verb, "reset")) {
+            free(line);
+            return (DebugCmd){.type = CMD_RESET};
         }
 
         // Fall through to invalid command

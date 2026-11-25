@@ -497,7 +497,9 @@ void cpu_disp_state(Cpu* cpu) {
            !!(cpu->sr & CPU_FLAG_B), !!(cpu->sr & CPU_FLAG_D), !!(cpu->sr & CPU_FLAG_I),
            !!(cpu->sr & CPU_FLAG_Z), !!(cpu->sr & CPU_FLAG_C));
 
+    const char* mnemonic = (cpu->alu_label[0] != '\0') ? cpu->alu_label : "---";
+
     // Buses
-    printf("  Buses:     Addr:0x%04X Data:0x%02X Opcode:0x%02X/%s R/W:%s\n", cpu->addr_bus,
-           cpu->data_bus, cpu->opcode, cpu->alu_label, cpu->is_read ? "R" : "W");
+    printf("  Buses:     Addr:0x%04X Data:0x%02X Opcode:0x%02X(%s) R/W:%s\n", cpu->addr_bus,
+           cpu->data_bus, cpu->opcode, mnemonic, cpu->is_read ? "R" : "W");
 }

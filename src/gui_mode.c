@@ -69,9 +69,9 @@ static void draw_registers_panel(Rectangle box, const Cpu* cpu) {
         row_h = 24.0f;
 
     GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("PC: $%04X", cpu->pc));
-    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("A:  $%02X", cpu->a));
-    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("X:  $%02X", cpu->x));
-    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("Y:  $%02X", cpu->y));
+    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("A: $%02X", cpu->a));
+    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("X: $%02X", cpu->x));
+    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("Y: $%02X", cpu->y));
     GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("SP: $%02X", cpu->sp));
 }
 
@@ -88,10 +88,9 @@ static void draw_buses_panel(Rectangle box, const Cpu* cpu) {
     if (row_h > 24.0f)
         row_h = 24.0f;
 
-    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("Addr:   $%04X", cpu->addr_bus));
-    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("Data:   $%02X", cpu->data_bus));
-    GuiLabel(layout_cut_top(&inner, row_h, 4.0f),
-             TextFormat("R/W:    %s", cpu->is_read ? "R" : "W"));
+    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("Addr: $%04X", cpu->addr_bus));
+    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("Data: $%02X", cpu->data_bus));
+    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("R/W: %s", cpu->is_read ? "R" : "W"));
 }
 
 /// @brief Draws the status of misc states on GUI
