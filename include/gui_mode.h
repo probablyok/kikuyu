@@ -1,7 +1,7 @@
 #ifndef GUI_MODE_H
 #define GUI_MODE_H
 
-#include "cli_args.h"
+#include "args.h"
 #include "cpu_state.h"
 
 /// @brief Program flow after setup for GUI mode

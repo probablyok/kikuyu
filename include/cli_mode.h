@@ -1,7 +1,7 @@
 #ifndef CLI_MODE_H
 #define CLI_MODE_H
 
-#include "cli_args.h"
+#include "args.h"
 #include "cpu_state.h"
 
 /// @brief Enum for various representing valid debug commands

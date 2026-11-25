@@ -1,12 +1,14 @@
-#include "cli_args.h"
-#include "cli_mode.h"
+#include "args.h"
 #include "gui_mode.h"
 #include "safe_wrappers.h"
+
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
 
 int main(int argc, char** argv) {
     // Get emulation parameters
     CmdArgs cmd_args;
-    handle_args(argc, argv, &cmd_args);
+    handle_gui_args(argc, argv, &cmd_args);
 
     // Create CPU
     Cpu cpu = {0};
@@ -22,15 +24,8 @@ int main(int argc, char** argv) {
         cpu.mem[CPU_MEM_RESET_VEC_ADDR_H] = cmd_args.bin_offset >> 8;
     }
 
-    // Boot CPU
+    // Boot CPU and run in CLI mode
     cpu_reset(&cpu);
-
-    // Different handler for GUI
-    if (cmd_args.is_gui) {
-        gui_run(&cmd_args, &cpu);
-        return 0;
-    }
-
-    cli_run(&cmd_args, &cpu);
+    gui_run(&cmd_args, &cpu);
     return 0;
 }
