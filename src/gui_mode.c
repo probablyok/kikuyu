@@ -6,8 +6,14 @@
 #include "raygui.h"
 #include "raylib.h"
 
+#include "math.h"
 #include <stdbool.h>
 #include <stdint.h>
+
+#define MIN_HZ 0.5f    // 1 cycle every 2 secs at 60FPS
+#define MAX_HZ 6000.0f // 100 cycles/frame at 60FPS
+
+static float slider_to_hz(float t) { return MIN_HZ * powf(MAX_HZ / MIN_HZ, t); }
 
 /// @brief Draws the toolbar part of the GUI
 /// @param bar The rectangle in which the toolbar is drawn
@@ -15,8 +21,8 @@
 /// @param running Flag for whether the emulation is currently running
 /// @param cycles_per_frame Rate to tick emulaotr
 /// @param total_cycles Total number of times emulator has been kicked before reset
-static void draw_toolbar(Rectangle bar, Cpu* cpu, bool* running, float* cycles_per_frame,
-                         uint64_t* total_cycles) {
+static void draw_toolbar(Rectangle bar, Cpu* cpu, bool* running, float* speed_t,
+                         float* cycles_accum, uint64_t* total_cycles) {
     const float gap = 6.0f;
 
     GuiToggle(layout_cut_left(&bar, 72.0f, gap), *running ? "Pause" : "Run", running);
@@ -24,21 +30,23 @@ static void draw_toolbar(Rectangle bar, Cpu* cpu, bool* running, float* cycles_p
     if (*running)
         GuiDisable();
     if (GuiButton(layout_cut_left(&bar, 85.0f, gap), "Step Inst")) {
-        int guard = 0;
         do {
             cpu_tick(cpu);
             (*total_cycles)++;
-        } while (cpu->cur_step != cpu_fetch_opcode && ++guard < 16);
+        } while (cpu->cur_step != cpu_fetch_opcode);
+        *cycles_accum = 0.0f;
     }
     if (GuiButton(layout_cut_left(&bar, 88.0f, gap), "Step Cycle")) {
         cpu_tick(cpu);
         (*total_cycles)++;
+        *cycles_accum = 0.0f;
     }
     if (*running)
         GuiEnable();
 
     if (GuiButton(layout_cut_left(&bar, 64.0f, gap), "Reset")) {
         *running = false;
+        *cycles_accum = 0.0f;
         cpu_reset(cpu);
         *total_cycles = 0;
     }
@@ -49,11 +57,14 @@ static void draw_toolbar(Rectangle bar, Cpu* cpu, bool* running, float* cycles_p
         cpu->nmi_pending = true;
     }
 
+    float hz = slider_to_hz(*speed_t);
+    const char* hz_label =
+        (hz < 10.0f) ? TextFormat("%.1f Hz", hz) : TextFormat("%d Hz", (int)roundf(hz));
+
     // Reserve right-side space for raygui's external slider text so it never clips
-    Rectangle slider_label_slot = layout_cut_right(&bar, 58.0f, 4.0f);
+    Rectangle slider_label_slot = layout_cut_right(&bar, 42.0f, 4.0f);
     (void)slider_label_slot;
-    GuiSliderBar(bar, "", TextFormat("%d cpf", (int)(*cycles_per_frame)), cycles_per_frame, 1.0f,
-                 100.0f);
+    GuiSliderBar(bar, "", hz_label, speed_t, 0.0f, 1.0f);
 }
 
 /// @brief Draws the status of each CPU register on GUI
@@ -226,16 +237,20 @@ void gui_run(const CmdArgs* cmd_args, Cpu* cpu) {
     SetTargetFPS(60);
 
     bool running = false;
-    float cycles_per_frame = 1.0f;
+    float speed_t = 0.51f;
+    float cycles_accum = 0.0f;
     uint64_t total_cycles = 0;
     int mem_page = (int)(cmd_args->bin_offset >> 8) & 0xFF;
 
     while (!WindowShouldClose()) {
         if (running) {
-            int steps = (int)cycles_per_frame;
-            for (int i = 0; i < steps; i++) {
+            float dt = GetFrameTime();
+
+            cycles_accum += slider_to_hz(speed_t) * dt;
+            while (cycles_accum >= 1.0f) {
                 cpu_tick(cpu);
                 total_cycles++;
+                cycles_accum -= 1.0f;
             }
         }
 
@@ -247,7 +262,7 @@ void gui_run(const CmdArgs* cmd_args, Cpu* cpu) {
 
         // Top toolbar
         Rectangle top_bar = layout_cut_top(&root, 32.0f, 8.0f);
-        draw_toolbar(top_bar, cpu, &running, &cycles_per_frame, &total_cycles);
+        draw_toolbar(top_bar, cpu, &running, &speed_t, &cycles_accum, &total_cycles);
 
         // Left (28%) and right (72%) columns
         Rectangle left_col = layout_cut_left(&root, 152.0f, 8.0f);
