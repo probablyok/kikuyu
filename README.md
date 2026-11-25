@@ -2,29 +2,49 @@
 
 Kikuyu is a basic NMOS 6502 Emulator implemented in C.
 
-# Disclaimer
-
-Kikuyu is a WIP emulator mainly intended for learning about the functionality of an NMOS 6502 CPU. This project is not open to pull requests, but please feel free to fork and use within the license specifications. 
+# Features
+- Lightweight, cycle-accurate NMOS 6502 emulator in C99
+- Supports all 151 legal NMOS 6502 opcodes
+- Can be compiled for GUI or CLI modes
+- Includes minimal test suite for opcodes
+- Includes a debugger
 
 # Usage
 
 
 ## Emulator
-In the root directory of the project, compile and run the emulator with,
+
+
+### Building
+Kikuyu can be run in CLI or GUI mode. Each mode is serviced through two unique executables that you must compile.
+
+In the root directory of the project, compile and run the emulator in CLI mode with,
 
 ```
-make
-./kikuyu path_to_bin
+make cli
+./kikuyu_cli path_to_bin
 ```
-
-where `path_to_bin` in some 6502 assembled binary the emulator runs. You can choose the offset into memory where the program is placed with `-o` (`0x8000` by default) and the number of cycles to execute for with `-c` (100 by default). The binary file provided does does not need to be padded to 16KiB. If the `RESET` vector is not set by the provided file, its set to the memory offset. 
-
-Further information can be derived by running,
+or for GUI mode,
 
 ```
-./kikuyu --help
+make gui
+./kikuyu_gui path_to_bin
 ```
 
+where `path_to_bin` is some 6502 assembled binary the emulator runs.
+
+**NOTE**: GUI mode requires [Raylib](https://github.com/raysan5/raylib) libraries are installed with your system's software package manager.
+
+
+### Passing Arguments
+You can view valid command-line arguments for the program by specifying the `--help` command when starting the CLI/GUI variants. For example,
+
+```
+./kikuyu_gui --help
+```
+
+
+### Cleaning
 You can clean any object/executable files made during the compilation with,
 
 ```
@@ -54,6 +74,17 @@ Test cases are pulled from the [65x02 Processor Tests](https://github.com/Single
 make clean-tests
 ```
 
+# Libraries Used
+- [Raylib](https://github.com/raysan5/raylib)
+  - **Must be installed manually**
+  - Used for GUI rendering
+- [Raygui](https://github.com/raysan5/raygui)
+  - Packaged with source files
+  - Used for GUI rendering   
+- [cJSON](https://github.com/DaveGamble/cJSON)
+  - Packaged with source files
+  - Used for parsing JSON test cases
+
 # References
 
 - [6502 Instruction Set](https://www.masswerk.at/6502/6502_instruction_set.html)
@@ -64,6 +95,3 @@ make clean-tests
   - Details exact data/address bus and R/W statuses per clock cycle
 - [6502_cpu.txt](https://www.nesdev.org/6502_cpu.txt)
   - Cycle-by-cycle breakdown of each instruction/addressing mode
-- [cJSON](https://github.com/DaveGamble/cJSON)
-  - Lightweight library for parsing JSON in C
-  - Used for parsing the 65x02 JSON tests
