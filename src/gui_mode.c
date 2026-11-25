@@ -79,23 +79,38 @@ static void draw_registers_panel(Rectangle box, const Cpu* cpu) {
 /// @param box The rectangle in which the statuses are drawn
 /// @param cpu The emulated 6502 CPU
 /// @param total_cycles Total number of times emulator has been kicked before reset
-static void draw_buses_panel(Rectangle box, const Cpu* cpu, uint64_t total_cycles) {
+static void draw_buses_panel(Rectangle box, const Cpu* cpu) {
     GuiGroupBox(box, "Buses");
     Rectangle inner = layout_group_inner(box, 10.0f);
 
-    const int count = 6;
+    const int count = 3;
+    float row_h = (inner.height - 4.0f * (float)(count - 1)) / (float)count;
+    if (row_h > 24.0f)
+        row_h = 24.0f;
+
+    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("Addr:   $%04X", cpu->addr_bus));
+    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("Data:   $%02X", cpu->data_bus));
+    GuiLabel(layout_cut_top(&inner, row_h, 4.0f),
+             TextFormat("R/W:    %s", cpu->is_read ? "R" : "W"));
+}
+
+/// @brief Draws the status of misc states on GUI
+/// @param box The rectangle in which the statuses are drawn
+/// @param cpu The emulated 6502 CPU
+/// @param total_cycles Total number of times emulator has been kicked before reset
+static void draw_states_panel(Rectangle box, const Cpu* cpu, uint64_t total_cycles) {
+    GuiGroupBox(box, "States");
+    Rectangle inner = layout_group_inner(box, 10.0f);
+
+    const int count = 3;
     float row_h = (inner.height - 4.0f * (float)(count - 1)) / (float)count;
     if (row_h > 24.0f)
         row_h = 24.0f;
 
     const char* mnemonic = (cpu->alu_label[0] != '\0') ? cpu->alu_label : "---";
 
-    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("Addr:   $%04X", cpu->addr_bus));
-    GuiLabel(layout_cut_top(&inner, row_h, 4.0f), TextFormat("Data:   $%02X", cpu->data_bus));
     GuiLabel(layout_cut_top(&inner, row_h, 4.0f),
              TextFormat("Opcode: $%02X (%s)", cpu->opcode, mnemonic));
-    GuiLabel(layout_cut_top(&inner, row_h, 4.0f),
-             TextFormat("R/W:    %s", cpu->is_read ? "R" : "W"));
     GuiLabel(layout_cut_top(&inner, row_h, 4.0f),
              TextFormat("IRQ/NMI: %d / %d", cpu->irq_pending ? 1 : 0, cpu->nmi_pending ? 1 : 0));
     GuiLabel(layout_cut_top(&inner, row_h, 4.0f),
@@ -201,13 +216,13 @@ static void draw_status_panel(Rectangle box, uint8_t sr) {
         const char* bit_text = is_set ? "1" : "0";
         int bit_w = MeasureText(bit_text, 14);
         DrawText(bit_text, (int)(val_cell.x + (val_cell.width - (float)bit_w) * 0.5f),
-                 (int)(val_cell.y + (val_cell.height - 14.0f) * 0.5f), 14, fg);
+                 (int)(val_cell.y + (val_cell.height - 14.0f) * 0.5f), 10, fg);
     }
 }
 
 void gui_run(const CmdArgs* cmd_args, Cpu* cpu) {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(960, 640, "Kikuyu 6502 Emulator");
+    InitWindow(820, 560, "Kikuyu 6502 Emulator");
     SetWindowMinSize(820, 560);
     SetTargetFPS(60);
 
@@ -236,14 +251,16 @@ void gui_run(const CmdArgs* cmd_args, Cpu* cpu) {
         draw_toolbar(top_bar, cpu, &running, &cycles_per_frame, &total_cycles);
 
         // Left (28%) and right (72%) columns
-        Rectangle left_col = layout_cut_left(&root, root.width * 0.28f, 8.0f);
+        Rectangle left_col = layout_cut_left(&root, 152.0f, 8.0f);
         Rectangle right_col = root;
 
         // Left column: Registers (top) + Buses (bottom)
-        Rectangle reg_box = layout_cut_top(&left_col, left_col.height * 0.48f, 8.0f);
+        Rectangle misc_box = layout_cut_bottom(&left_col, 108.0f, 8.0f);
+        Rectangle reg_box = layout_cut_top(&left_col, left_col.height * 0.6, 8.0f);
         Rectangle bus_box = left_col;
         draw_registers_panel(reg_box, cpu);
-        draw_buses_panel(bus_box, cpu, total_cycles);
+        draw_buses_panel(bus_box, cpu);
+        draw_states_panel(misc_box, cpu, total_cycles);
 
         // Right column: Memory Viewer (top) + Status Register (bottom)
         Rectangle sr_box = layout_cut_bottom(&right_col, 108.0f, 8.0f);
